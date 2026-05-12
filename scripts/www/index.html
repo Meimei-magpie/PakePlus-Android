@@ -1240,7 +1240,7 @@
     function startSession() { if(!shuffledWords.length){ shuffledWords=[...FULL_WORD_LIST]; for(let i=shuffledWords.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [shuffledWords[i], shuffledWords[j]]=[shuffledWords[j], shuffledWords[i]]; } } currentIndex=0; isRevealed=false; currentWordDetails=null; updateUI(); (async()=>{ await ensureCurrentWordHasAudioOrSkip(); playWordAudio(shuffledWords[currentIndex]); })(); document.getElementById('playBtn').innerHTML="🔊 Listen again"; saveProgress(); }
     async function nextWord() { if(currentIndex<0) return; currentIndex=(currentIndex+1)%shuffledWords.length; isRevealed=false; currentWordDetails=null; updateUI(); await ensureCurrentWordHasAudioOrSkip(); playWordAudio(shuffledWords[currentIndex]); saveProgress(); }
     async function prevWord() { if(currentIndex<0) return; currentIndex=(currentIndex-1+shuffledWords.length)%shuffledWords.length; isRevealed=false; currentWordDetails=null; updateUI(); await ensureCurrentWordHasAudioOrSkip(); playWordAudio(shuffledWords[currentIndex]); saveProgress(); }
-    function testVoice() { playWordAudio("inspiration"); }
+    function testVoice() { playWordAudio("hello"); }
     function toggleEssay() { let b=document.getElementById('essaySampleBox'); if(b.style.display==='none'||!b.style.display){ let e=getTodayEssay(); b.innerHTML=`<strong>📄 Sample Essay:</strong><br><br>${e.sample}`; b.style.display='block'; } else b.style.display='none'; }
     
     // 弹窗控制 & 第三天自动询问
