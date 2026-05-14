@@ -974,7 +974,7 @@
 
 <script>
     // 版本更新提示
-    const CURRENT_APP_VERSION = '3.0.0';
+    const CURRENT_APP_VERSION = '4.0.0';
     
     // 隐私政策弹窗逻辑
     const PRIVACY_KEY = 'uswords_privacy_agreed';
@@ -1209,15 +1209,68 @@
         return false;
     }
     
-    // 每日任务
+    // ======================== 修改：每日任务基于当地时间 ========================
+    function getTodayStr() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // 每日任务相关
     const DAILY_KEY = 'uswords_daily_threshold1';
     let todayWordsSet = new Set(), dailyCount = 0, isUnlocked = false;
-    function getTodayStr() { return new Date().toISOString().split('T')[0]; }
-    function loadDailyData() { const stored = localStorage.getItem(DAILY_KEY); if(stored) try { const d=JSON.parse(stored); if(d.date===getTodayStr()) { todayWordsSet=new Set(d.words); dailyCount=todayWordsSet.size; } else { todayWordsSet.clear(); dailyCount=0; } } catch(e){} else { todayWordsSet.clear(); dailyCount=0; } updateDailyUI(); checkUnlock(); saveDailyData(); }
-    function saveDailyData() { localStorage.setItem(DAILY_KEY, JSON.stringify({date:getTodayStr(), words:Array.from(todayWordsSet)})); }
-    function updateDailyUI() { document.getElementById('dailyCountDisplay').innerText = dailyCount>=30 ? `Learned today: ${dailyCount} (🐢unlocked)` : `Learned today: ${dailyCount} / 30+`; document.getElementById('dailyProgressFill').style.width = `${Math.min((dailyCount/30)*100,100)}%`; }
-    function addWordToDaily(word) { const w=word.toLowerCase(); if(todayWordsSet.has(w)) return false; todayWordsSet.add(w); dailyCount=todayWordsSet.size; saveDailyData(); updateDailyUI(); checkUnlock(); const span=document.createElement('span'); span.className='count-animation'; span.innerText=' +1'; document.getElementById('dailyCountDisplay').appendChild(span); setTimeout(()=>span.remove(),1800); return true; }
-    function checkUnlock() { const u=dailyCount>=30; isUnlocked=u; document.getElementById('unlockZone').style.opacity=u?'1':'0.5'; document.getElementById('playNewsBtn').disabled=!u; document.getElementById('stopNewsBtn').disabled=!u; document.getElementById('continueNewsBtn').disabled=!u; document.getElementById('viewEssayBtn').disabled=!u; }
+    function loadDailyData() { 
+        const stored = localStorage.getItem(DAILY_KEY); 
+        if(stored) try { 
+            const d = JSON.parse(stored); 
+            if(d.date === getTodayStr()) { 
+                todayWordsSet = new Set(d.words); 
+                dailyCount = todayWordsSet.size; 
+            } else { 
+                todayWordsSet.clear(); 
+                dailyCount = 0; 
+            } 
+        } catch(e){} else { 
+            todayWordsSet.clear(); 
+            dailyCount = 0; 
+        } 
+        updateDailyUI(); 
+        checkUnlock(); 
+        saveDailyData(); 
+    }
+    function saveDailyData() { 
+        localStorage.setItem(DAILY_KEY, JSON.stringify({date:getTodayStr(), words:Array.from(todayWordsSet)})); 
+    }
+    function updateDailyUI() { 
+        document.getElementById('dailyCountDisplay').innerText = dailyCount>=30 ? `Learned today: ${dailyCount} (🐢unlocked)` : `Learned today: ${dailyCount} / 30+`; 
+        document.getElementById('dailyProgressFill').style.width = `${Math.min((dailyCount/30)*100,100)}%`; 
+    }
+    function addWordToDaily(word) { 
+        const w = word.toLowerCase(); 
+        if(todayWordsSet.has(w)) return false; 
+        todayWordsSet.add(w); 
+        dailyCount = todayWordsSet.size; 
+        saveDailyData(); 
+        updateDailyUI(); 
+        checkUnlock(); 
+        const span = document.createElement('span'); 
+        span.className = 'count-animation'; 
+        span.innerText = ' +1'; 
+        document.getElementById('dailyCountDisplay').appendChild(span); 
+        setTimeout(()=>span.remove(),1800); 
+        return true; 
+    }
+    function checkUnlock() { 
+        const u = dailyCount>=30; 
+        isUnlocked = u; 
+        document.getElementById('unlockZone').style.opacity = u ? '1' : '0.5'; 
+        document.getElementById('playNewsBtn').disabled = !u; 
+        document.getElementById('stopNewsBtn').disabled = !u; 
+        document.getElementById('continueNewsBtn').disabled = !u; 
+        document.getElementById('viewEssayBtn').disabled = !u; 
+    }
     
     // 新闻模块
     let currentNewsAudio=null, currentNewsIndex=0;
@@ -1243,11 +1296,34 @@
     function testVoice() { playWordAudio("hello"); }
     function toggleEssay() { let b=document.getElementById('essaySampleBox'); if(b.style.display==='none'||!b.style.display){ let e=getTodayEssay(); b.innerHTML=`<strong>📄 Sample Essay:</strong><br><br>${e.sample}`; b.style.display='block'; } else b.style.display='none'; }
     
-    // 弹窗控制 & 第三天自动询问
+    // ======================== 修改：捐赠弹窗基于 72 小时累计时间戳 ========================
+    const DONATION_KEY = 'uswords_donation_asked';
+    function checkAndAskDonation() {
+        if (localStorage.getItem(DONATION_KEY) === 'true') return;
+        let firstUse = localStorage.getItem('uswords_first_use');
+        const now = Date.now();
+        // 兼容旧版本（存储日期字符串的情况）
+        if (firstUse && firstUse.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const oldDate = new Date(firstUse);
+            oldDate.setHours(0, 0, 0, 0);
+            firstUse = oldDate.getTime();
+            localStorage.setItem('uswords_first_use', firstUse.toString());
+        }
+        if (!firstUse) {
+            localStorage.setItem('uswords_first_use', now.toString());
+            return;
+        }
+        const diffMs = now - parseInt(firstUse, 10);
+        const hoursElapsed = diffMs / (1000 * 3600);
+        if (hoursElapsed >= 72 && !localStorage.getItem(DONATION_KEY)) {
+            setTimeout(() => showModal(), 1500);
+            localStorage.setItem(DONATION_KEY, 'true');
+        }
+    }
+    
+    // 弹窗控制
     function showModal() { document.getElementById('infoModal').classList.add('active'); }
     function hideModal() { document.getElementById('infoModal').classList.remove('active'); }
-    const DONATION_KEY='uswords_donation_asked';
-    function checkAndAskDonation() { let today=new Date(); today.setHours(0,0,0,0); let first=localStorage.getItem('uswords_first_use'); if(!first) { localStorage.setItem('uswords_first_use', today.toISOString()); return; } let firstDate=new Date(first); firstDate.setHours(0,0,0,0); let diff=Math.floor((today-firstDate)/(86400000)); if(!localStorage.getItem(DONATION_KEY) && diff>=3) { setTimeout(()=>showModal(),1500); localStorage.setItem(DONATION_KEY,'true'); } }
     
     // 标签页切换
     function switchTab(tabId) {
@@ -1277,7 +1353,31 @@
     document.getElementById('infoModal').addEventListener('click', (e) => { if(e.target===document.getElementById('infoModal')) hideModal(); });
     document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => switchTab(btn.dataset.tab)); });
     
-    async function initApp() { updateWritingArea(); loadDailyData(); let loaded=loadProgress(); if(loaded && shuffledWords.length && currentIndex>=0){ isRevealed=false; currentWordDetails=null; updateUI(); document.getElementById('prevBtn').disabled=false; document.getElementById('nextBtn').disabled=false; document.getElementById('playBtn').innerHTML="🔊 Listen again"; await ensureCurrentWordHasAudioOrSkip(); } else { shuffledWords=[...FULL_WORD_LIST]; for(let i=shuffledWords.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [shuffledWords[i], shuffledWords[j]]=[shuffledWords[j], shuffledWords[i]]; } currentIndex=-1; updateUI(); document.getElementById('playBtn').innerHTML="🎧 Start & Listen"; } checkUnlock(); checkAndAskDonation(); }
+    async function initApp() { 
+        updateWritingArea(); 
+        loadDailyData(); 
+        let loaded = loadProgress(); 
+        if(loaded && shuffledWords.length && currentIndex>=0){ 
+            isRevealed=false; 
+            currentWordDetails=null; 
+            updateUI(); 
+            document.getElementById('prevBtn').disabled=false; 
+            document.getElementById('nextBtn').disabled=false; 
+            document.getElementById('playBtn').innerHTML="🔊 Listen again"; 
+            await ensureCurrentWordHasAudioOrSkip(); 
+        } else { 
+            shuffledWords=[...FULL_WORD_LIST]; 
+            for(let i=shuffledWords.length-1;i>0;i--){ 
+                let j=Math.floor(Math.random()*(i+1)); 
+                [shuffledWords[i], shuffledWords[j]]=[shuffledWords[j], shuffledWords[i]]; 
+            } 
+            currentIndex=-1; 
+            updateUI(); 
+            document.getElementById('playBtn').innerHTML="🎧 Start & Listen"; 
+        } 
+        checkUnlock(); 
+        checkAndAskDonation(); 
+    }
     
     checkPrivacyAgreement();
 </script>
