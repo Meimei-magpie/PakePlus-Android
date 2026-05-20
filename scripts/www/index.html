@@ -746,6 +746,124 @@
             opacity: 0.7;
         }
 
+
+     /* 新闻原文模态框专用样式（覆盖深蓝色背景） */
+    #transcriptModal .modal-container {
+    background: #f8f7f2;      /* 暖白背景，与原有卡片风格一致 */
+    color: #2c3e44;
+}
+    #transcriptModal .modal-close {
+    background: transparent;
+    color: #1B2B48;          /* 深蓝色叉号，在浅色背景上清晰 */
+}
+#transcriptModal .modal-close:hover {
+    background: #f0f0f0;
+}      
+
+        /* ========= 新增：天使圆框动画样式 ========= */
+        
+        /* 天使圆框 - 缩小、深灰色、翅膀为 🪽 符号 */
+.angel-circle {
+    position: fixed;
+    z-index: 10000;
+    width: 40px;           /* 原60px，缩小三分之一 */
+    height: 40px;
+    background: #2c2c2e;   /* 唱片深灰色（原 #6c6c6e） */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.05s;
+    visibility: hidden;
+    opacity: 0;
+    right: 20px;
+    top: 100px;
+}
+.angel-circle.animate {
+    visibility: visible;
+    opacity: 1;
+    animation: flyToCenter 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+}
+@keyframes flyToCenter {
+    0% {
+        right: 20px;
+        top: 100px;
+        transform: scale(0.6) rotate(-10deg);
+        opacity: 0;
+    }
+    40% {
+        right: 35%;
+        top: 40%;
+        transform: scale(1.1) rotate(5deg);
+        opacity: 1;
+    }
+    100% {
+        right: calc(50% - 20px);
+        top: calc(50% - 20px);
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+/* 中间播放键 (白色三角形) */
+.angel-circle .play-icon {
+    width: 0;
+    height: 0;
+    border-left: 12px solid white;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    margin-left: 3px;
+}
+/* 翅膀使用伪元素，显示 🪽 符号 */
+.angel-circle::before,
+.angel-circle::after {
+    content: "🪽";
+    position: absolute;
+    font-size: 16px;
+    color: white;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.angel-circle::before {
+    left: -18px;
+}
+.angel-circle::after {
+    right: -18px;
+}
+               /* 简约捐赠弹窗（半个更新弹窗大小） */
+        .donation-fly-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            width: 280px;
+            border-radius: 28px;
+            padding: 20px;
+            text-align: center;
+            z-index: 10001;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .donation-fly-modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .donation-fly-modal .qr-sim {
+            margin: 10px 0;
+        }
+        .donation-fly-modal .close-fly {
+            margin-top: 12px;
+            background: #c0aa7a;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
         @media (max-width: 600px) {
             .app {
                 border-radius: 0.8rem;
@@ -853,6 +971,7 @@
                     <button class="news-btn" id="playNewsBtn" disabled>▶ Play news clip</button>
                     <button class="stop-news-btn" id="stopNewsBtn" disabled>⏹️ Stop</button>
                     <button class="continue-news-btn" id="continueNewsBtn" disabled>⏯️ Continue</button>
+                    <button class="news-btn" id="transcriptNewsBtn" disabled>📄 View text</button>
                     <div id="newsPreview" class="news-content-preview" style="display: none;"></div>
                     <div class="news-note" style="font-size: 0.7rem; color:#8b694a; margin-top:6px;">* 84 clips (01.mp3 ~ 84.mp3) from CNN-Listenning folder.</div>
                 </div>
@@ -905,6 +1024,35 @@
         </div>
     </div>
 </div>
+
+
+    <!-- 新闻原文模态框 -->
+<div id="transcriptModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-close-wrapper">
+            <button class="modal-close" id="closeTranscriptBtn">✕</button>
+        </div>
+        <h3>📄 Original News Article</h3>
+        <div id="transcriptContent" style="white-space: pre-wrap; max-height: 60vh; overflow-y: auto; padding: 1rem;"></div>
+    </div>
+</div>     
+
+    <!-- 新增：天使圆框元素 -->
+    <div id="angelCircle" class="angel-circle">
+    <div class="play-icon"></div>
+    </div>
+
+    <!-- 新增：独立简洁捐赠弹窗 -->
+    <div id="donationFlyModal" class="donation-fly-modal">
+        <h3 style="margin-bottom: 8px;">Donation</h3>
+        <p style="font-size:0.75rem;">Do you want to donate <strong>$6 (~50 RMB)</strong> to sustain updates.</p>
+        <div class="qr-sim" style="background: transparent;">
+            <img src="./QRpay.jpg" alt="Donation QR Code" style="width: 140px; height: auto; border-radius: 12px;">
+            <p class="text-small" style="margin-top: 6px;">Alipay/WeChat</p>
+        </div>
+        <button class="close-fly" id="closeFlyBtn">Close</button>
+    </div>
+
     <!-- 多标签弹窗 -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-container">
@@ -921,7 +1069,7 @@
                 <div id="tab-info" class="tab-content active">
                     <div class="update-section">
                         <div class="numbered-item"><strong>1.</strong> <span>🔄 Quarterly Update</span></div>
-                        <p>Dictionary & news clips renewed every 3 months. Need customized wordlists (TOEFL, IELTS, GRE, K-12)? Contact: <strong>sapling_z@126.com</strong></p>
+                        <p>Dictionary & news clips renewed every 3 months. Need customized wordlists (TOEFL, IELTS, GRE or Middle school level)? Contact: <strong>sapling_z@126.com</strong></p>
                     </div>
                     <div class="donation-section">
                         <div class="numbered-item" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -1270,6 +1418,7 @@
         document.getElementById('stopNewsBtn').disabled = !u; 
         document.getElementById('continueNewsBtn').disabled = !u; 
         document.getElementById('viewEssayBtn').disabled = !u; 
+        document.getElementById('transcriptNewsBtn').disabled = !u;
     }
     
     // 新闻模块
@@ -1281,6 +1430,24 @@
     function resumeNewsAudio() { if(!isUnlocked) return; if(currentNewsAudio && currentNewsAudio.paused && currentNewsAudio.currentTime>0) { currentNewsAudio.play(); updateNewsPreview(`▶️ Resumed clip ${currentNewsIndex}/${MAX_NEWS}`); } else if(currentNewsIndex>=1) loadAndPlayClip(currentNewsIndex,true); else updateNewsPreview(`ℹ️ No paused news.`); }
     function loadAndPlayClip(idx,auto) { if(!isUnlocked) return; if(currentNewsAudio) currentNewsAudio.pause(); let fn=idx.toString().padStart(2,'0')+'.mp3'; let a=new Audio(getNewsBasePath()+fn); currentNewsAudio=a; currentNewsIndex=idx; updateNewsPreview(`🎵 Playing ${fn} (${idx}/${MAX_NEWS})`); a.onerror=()=>updateNewsPreview(`✘ Error: ${fn} missing`); a.onended=()=>{ updateNewsPreview(`✓  Finished ${fn}`); currentNewsAudio=null; }; if(auto) a.play().catch(e=>updateNewsPreview(`⚠️ Playback failed`)); }
     function playNextNewsClip() { if(!isUnlocked) return; let nxt=(currentNewsIndex%MAX_NEWS)+1; loadAndPlayClip(nxt,true); }
+    // 获取当前新闻索引对应的英文原文
+async function fetchNewsTranscript(index) {
+    const fileName = index.toString().padStart(2, '0') + '.txt';
+    const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const url = `${basePath}CNN-Listenning/transcripts/${fileName}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`文本加载失败: ${response.status}`);
+            return null;
+        }
+        const text = await response.text();
+        return text.trim() || null;
+    } catch (err) {
+        console.error('获取文本异常:', err);
+        return null;
+    }
+}
     
     // 单词会话
     let shuffledWords=[], currentIndex=-1, isRevealed=false, currentWordDetails=null;
@@ -1296,13 +1463,31 @@
     function testVoice() { playWordAudio("hello"); }
     function toggleEssay() { let b=document.getElementById('essaySampleBox'); if(b.style.display==='none'||!b.style.display){ let e=getTodayEssay(); b.innerHTML=`<strong>📄 Sample Essay:</strong><br><br>${e.sample}`; b.style.display='block'; } else b.style.display='none'; }
     
-    // ======================== 修改：捐赠弹窗基于 72 小时累计时间戳 ========================
-    const DONATION_KEY = 'uswords_donation_asked';
+    // ======================== 修改：捐赠弹窗改为独立的“天使圆框”动画（仅一次） ========================
+    const DONATION_FLY_KEY = 'uswords_angel_donation_shown';
+    function showAngelDonation() {
+        if (localStorage.getItem(DONATION_FLY_KEY) === 'true') return;
+        const angel = document.getElementById('angelCircle');
+        if (!angel) return;
+        angel.classList.add('animate');
+        // 点击圆框弹出捐赠弹窗
+        const onClickAngel = () => {
+            const flyModal = document.getElementById('donationFlyModal');
+            if (flyModal) flyModal.classList.add('active');
+            // 移除圆框
+            angel.style.visibility = 'hidden';
+            angel.style.opacity = '0';
+            angel.removeEventListener('click', onClickAngel);
+        };
+        angel.addEventListener('click', onClickAngel);
+        localStorage.setItem(DONATION_FLY_KEY, 'true');
+    }
+    
+    // 保留原来的捐赠检测但不再调用原来的showModal，改为新动画
     function checkAndAskDonation() {
-        if (localStorage.getItem(DONATION_KEY) === 'true') return;
+        if (localStorage.getItem(DONATION_FLY_KEY) === 'true') return;
         let firstUse = localStorage.getItem('uswords_first_use');
         const now = Date.now();
-        // 兼容旧版本（存储日期字符串的情况）
         if (firstUse && firstUse.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const oldDate = new Date(firstUse);
             oldDate.setHours(0, 0, 0, 0);
@@ -1315,13 +1500,13 @@
         }
         const diffMs = now - parseInt(firstUse, 10);
         const hoursElapsed = diffMs / (1000 * 3600);
-        if (hoursElapsed >= 72 && !localStorage.getItem(DONATION_KEY)) {
-            setTimeout(() => showModal(), 1500);
-            localStorage.setItem(DONATION_KEY, 'true');
+        if (hoursElapsed >= 1 && !localStorage.getItem(DONATION_FLY_KEY)) {
+            // 延迟1.5秒后显示动画圆框（与原来弹窗时机相同）
+            setTimeout(() => showAngelDonation(), 1500);
         }
     }
     
-    // 弹窗控制
+    // 弹窗控制（原有的多标签弹窗仍保留供菜单使用）
     function showModal() { document.getElementById('infoModal').classList.add('active'); }
     function hideModal() { document.getElementById('infoModal').classList.remove('active'); }
     
@@ -1352,6 +1537,80 @@
     document.getElementById('closeModalBtn2').addEventListener('click', hideModal);
     document.getElementById('infoModal').addEventListener('click', (e) => { if(e.target===document.getElementById('infoModal')) hideModal(); });
     document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => switchTab(btn.dataset.tab)); });
+    // 查看文本按钮
+document.getElementById('transcriptNewsBtn').addEventListener('click', async () => {
+    if (currentNewsIndex === 0) {
+        const toast = document.createElement('div');
+        toast.innerText = '请先播放一段新闻';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            z-index: 10000;
+            font-size: 0.8rem;
+            font-family: system-ui, -apple-system;
+            white-space: nowrap;
+            pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+        return;
+    }
+    const transcript = await fetchNewsTranscript(currentNewsIndex);
+    if (!transcript) {
+        const toast = document.createElement('div');
+        toast.innerText = '未找到该新闻的文本，请联系管理员';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            z-index: 10000;
+            font-size: 0.8rem;
+            font-family: system-ui, -apple-system;
+            white-space: nowrap;
+            pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+        return;
+    }
+    const modal = document.getElementById('transcriptModal');
+    const contentDiv = document.getElementById('transcriptContent');
+    contentDiv.innerText = transcript;
+    modal.classList.add('active');
+});
+
+// 关闭模态框（叉号按钮）
+document.getElementById('closeTranscriptBtn').addEventListener('click', () => {
+    document.getElementById('transcriptModal').classList.remove('active');
+});
+// 点击模态框背景关闭
+document.getElementById('transcriptModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('transcriptModal')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// 新增关闭独立捐赠弹窗
+document.getElementById('closeFlyBtn')?.addEventListener('click', () => {
+    document.getElementById('donationFlyModal').classList.remove('active');
+});
+// 点击背景关闭（可选）
+document.getElementById('donationFlyModal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('donationFlyModal')) {
+        e.target.classList.remove('active');
+    }
+});
     
     async function initApp() { 
         updateWritingArea(); 
