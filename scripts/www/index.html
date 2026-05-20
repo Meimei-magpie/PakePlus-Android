@@ -763,12 +763,13 @@
         /* ========= 新增：天使圆框动画样式 ========= */
         
         /* 天使圆框 - 缩小、深灰色、翅膀为 🪽 符号 */
+/* 天使圆框 - 深灰色唱片底，左下角起始 */
 .angel-circle {
     position: fixed;
     z-index: 10000;
-    width: 40px;           /* 原60px，缩小三分之一 */
+    width: 40px;
     height: 40px;
-    background: #2c2c2e;   /* 唱片深灰色（原 #6c6c6e） */
+    background: #2c2c2e;   /* 唱片深灰色 */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -778,58 +779,79 @@
     transition: all 0.05s;
     visibility: hidden;
     opacity: 0;
-    right: 20px;
-    top: 100px;
+    /* 初始位置：左下角 */
+    left: 20px;
+    bottom: 20px;
+    top: auto;
+    right: auto;
 }
 .angel-circle.animate {
     visibility: visible;
     opacity: 1;
-    animation: flyToCenter 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+    animation: flyParabola 1.5s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
 }
-@keyframes flyToCenter {
+/* 抛物线移动：从左下角飞到中部偏下 */
+@keyframes flyParabola {
     0% {
-        right: 20px;
-        top: 100px;
-        transform: scale(0.6) rotate(-10deg);
-        opacity: 0;
+        left: 20px;
+        bottom: 20px;
+        transform: scale(0.6) rotate(-5deg);
+        opacity: 0.5;
     }
     40% {
-        right: 35%;
-        top: 40%;
-        transform: scale(1.1) rotate(5deg);
+        left: 40%;
+        bottom: 60%;
+        transform: scale(1.1) rotate(8deg);
         opacity: 1;
     }
     100% {
-        right: calc(50% - 20px);
-        top: calc(50% - 20px);
-        transform: scale(1) rotate(0deg);
+        left: 50%;
+        bottom: 30%;
+        transform: translateX(-50%) scale(1) rotate(0deg);
         opacity: 1;
     }
 }
-/* 中间播放键 (白色三角形) */
+/* 中间播放键：土黄色三角形 */
 .angel-circle .play-icon {
     width: 0;
     height: 0;
-    border-left: 12px solid white;
-    border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;
-    margin-left: 3px;
+    border-left: 14px solid #D4A13E;   /* 土黄色 */
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    margin-left: 4px;
 }
-/* 翅膀使用伪元素，显示 🪽 符号 */
+/* 翅膀：使用伪元素，轴对称（通过镜像） */
 .angel-circle::before,
 .angel-circle::after {
     content: "🪽";
     position: absolute;
-    font-size: 16px;
+    font-size: 18px;
     color: white;
     top: 50%;
     transform: translateY(-50%);
 }
 .angel-circle::before {
-    left: -18px;
+    left: -22px;
+    transform: translateY(-50%) scaleX(1);
 }
 .angel-circle::after {
-    right: -18px;
+    right: -22px;
+    transform: translateY(-50%) scaleX(-1); /* 镜像，实现轴对称 */
+}
+/* 粉色光芒 */
+.angel-circle.glow {
+    animation: pinkGlow 5s ease-out forwards;
+}
+@keyframes pinkGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 105, 180, 0.7);
+    }
+    20% {
+        box-shadow: 0 0 20px 15px rgba(255, 105, 180, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 30px 20px rgba(255, 105, 180, 0.6);
+    }
 }
                /* 简约捐赠弹窗（半个更新弹窗大小） */
         .donation-fly-modal {
@@ -1076,7 +1098,7 @@
                             <strong style="width: 30px; text-align: left;">2.</strong>
                             <span style="flex: 1; text-align: center;">Support the project</span>
                         </div>
-                        <p>If you like USwords, consider donating <strong>$6 (~50 RMB)</strong> by scanning the QR code with WeChat (Pay) to sustain updates? No pressure — free usage remains forever.</p>
+                        <p>Donate <strong>$6 (~50 RMB)</strong> by scanning the QR code with WeChat (Pay) or Alipay to sustain updates? No pressure — free usage remains forever.</p>
                         <div class="qr-sim">
                             <img src="./QRpay.jpg" alt="Donation QR Code" style="width: 160px; height: auto; border-radius: 12px; ">
                             <p class="text-small" style="margin-top: 8px;"> Alipay/WeChat</p>
@@ -1466,22 +1488,40 @@ async function fetchNewsTranscript(index) {
     // ======================== 修改：捐赠弹窗改为独立的“天使圆框”动画（仅一次） ========================
     const DONATION_FLY_KEY = 'uswords_angel_donation_shown';
     function showAngelDonation() {
-        if (localStorage.getItem(DONATION_FLY_KEY) === 'true') return;
-        const angel = document.getElementById('angelCircle');
-        if (!angel) return;
-        angel.classList.add('animate');
-        // 点击圆框弹出捐赠弹窗
+    if (localStorage.getItem(DONATION_FLY_KEY) === 'true') return;
+    const angel = document.getElementById('angelCircle');
+    if (!angel) return;
+    
+    // 开始动画
+    angel.classList.add('animate');
+    
+    // 监听动画结束事件
+    const onAnimationEnd = () => {
+        angel.removeEventListener('animationend', onAnimationEnd);
+        
+        // 添加粉色光芒（停留5秒）
+        angel.classList.add('glow');
+        
+        // 5秒后移除光芒，并保持圆框（但随后点击可弹出捐赠窗）
+        setTimeout(() => {
+            angel.classList.remove('glow');
+            // 可选：不隐藏，仍可点击
+        }, 5000);
+        
+        // 添加点击事件弹出捐赠弹窗（仅一次）
         const onClickAngel = () => {
             const flyModal = document.getElementById('donationFlyModal');
             if (flyModal) flyModal.classList.add('active');
-            // 移除圆框
-            angel.style.visibility = 'hidden';
-            angel.style.opacity = '0';
             angel.removeEventListener('click', onClickAngel);
+            // 点击后也可以选择隐藏圆框（可选）
+            // angel.style.visibility = 'hidden';
         };
         angel.addEventListener('click', onClickAngel);
-        localStorage.setItem(DONATION_FLY_KEY, 'true');
-    }
+    };
+    
+    angel.addEventListener('animationend', onAnimationEnd);
+    localStorage.setItem(DONATION_FLY_KEY, 'true');
+}
     
     // 保留原来的捐赠检测但不再调用原来的showModal，改为新动画
     function checkAndAskDonation() {
